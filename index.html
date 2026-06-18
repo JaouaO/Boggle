@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boggle</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="sidebar">
+
+            <h2>TAILLE</h2>
+
+            <div class="size-selector">
+                <button class="size-btn active" data-size="3">3×3</button>
+                <button class="size-btn" data-size="4">4×4</button>
+                <button class="size-btn" data-size="5">5×5</button>
+            </div>
+
+            <button id="randomBtn" class="action-btn">
+                Lettres aléatoires
+            </button>
+
+            <input id="wordInput" type="text" placeholder="Tester un mot">
+
+            <button id="checkBtn" class="action-btn">
+                Vérifier
+            </button>
+
+            <div id="result"></div>
+
+            <button id="solveBtn" class="action-btn">
+    Trouver les mots
+</button>
+<div id="solverResult"></div>
+
+        </div>
+
+        <div class="board-wrapper">
+            <div id="board" class="board"></div>
+        </div>
+
+    </div>
+
+    <!-- JS -->
+<script type="module" src="./js/main.js"></script>
+
+</body>
+
+</html>
