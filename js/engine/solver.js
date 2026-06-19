@@ -2,19 +2,19 @@ import { DIRECTIONS } from "../core/config.js";
 import {
     normalizeWord,
     hasPrefix,
-    isWord
+    isWord,
+    getDisplayWords
 } from "./dictionary.js";
 
 export function solveBoard(grid) {
 
-    const results = new Set();
+    const foundNorms = new Set();
 
     const rows = grid.length;
     const cols = grid[0].length;
 
     function dfs(r, c, word, visited) {
 
-        // bounds
         if (
             r < 0 || c < 0 ||
             r >= rows || c >= cols
@@ -28,14 +28,12 @@ export function solveBoard(grid) {
         const newWord = word + letter;
         const norm = normalizeWord(newWord);
 
-        // PRUNING (très important pour perf)
         if (!hasPrefix(norm)) return;
 
         visited.add(key);
 
-        // mot valide
         if (norm.length >= 3 && isWord(norm)) {
-            results.add(norm);
+            foundNorms.add(norm);
         }
 
         for (const [dr, dc] of DIRECTIONS) {
@@ -51,5 +49,9 @@ export function solveBoard(grid) {
         }
     }
 
-    return [...results];
+    return [...foundNorms].map(norm => ({
+        norm,
+        variants: getDisplayWords(norm)
+            .sort((a, b) => a.localeCompare(b, "fr"))
+    }));
 }

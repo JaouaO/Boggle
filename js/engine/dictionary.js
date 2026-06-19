@@ -1,8 +1,11 @@
 let dictionary = new Set();
 let prefixes = new Set();
+let displayByNorm = new Map();
 
 /**
- * Normalise : supprime accents + uppercase
+ * Normalise pour les calculs :
+ * - majuscules
+ * - suppression des accents
  */
 export function normalizeWord(word) {
     return word
@@ -12,7 +15,7 @@ export function normalizeWord(word) {
 }
 
 /**
- * Charge le dictionnaire + construit prefixes
+ * Charge le dictionnaire + construit les préfixes
  */
 export async function loadDictionary(size) {
 
@@ -28,15 +31,22 @@ export async function loadDictionary(size) {
 
     dictionary.clear();
     prefixes.clear();
+    displayByNorm.clear();
 
     for (const words of Object.values(data)) {
         for (const word of words) {
 
-            const norm = normalizeWord(word);
+            const display = word.toLocaleLowerCase("fr-FR");
+            const norm = normalizeWord(display);
 
             dictionary.add(norm);
 
-            // build prefixes
+            if (!displayByNorm.has(norm)) {
+                displayByNorm.set(norm, new Set());
+            }
+
+            displayByNorm.get(norm).add(display);
+
             for (let i = 1; i <= norm.length; i++) {
                 prefixes.add(norm.slice(0, i));
             }
@@ -51,16 +61,14 @@ export async function loadDictionary(size) {
     );
 }
 
-/**
- * test mot exact
- */
 export function isWord(word) {
     return dictionary.has(word);
 }
 
-/**
- * pruning DFS
- */
 export function hasPrefix(prefix) {
     return prefixes.has(prefix);
+}
+
+export function getDisplayWords(norm) {
+    return [...(displayByNorm.get(norm) ?? [])];
 }

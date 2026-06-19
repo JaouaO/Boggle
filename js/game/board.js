@@ -18,11 +18,11 @@ const dice4x4 = [
 ========================= */
 const dice5x5 = [
     ...dice4x4,
-    "AEIOUY", "AEIOUY",
-    "BCDFGH", "JKLMNP",
-    "QRSTUV", "WXYZAA",
-    "EERESS", "ENTRES",
-    "IONATE", "SATION"
+    "AEIOUY", "SPULTE",
+    "RECALS", "BMAQJO",
+    "DECAMP", "WXYZEA",
+    "ERISP", "TLIBRA",
+    "GLENYU"
 ];
 
 /* =========================
