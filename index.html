@@ -19,9 +19,9 @@
             <h2>TAILLE</h2>
 
             <div class="size-selector">
-                <button class="size-btn active" data-size="3">3×3</button>
-                <button class="size-btn" data-size="4">4×4</button>
-                <button class="size-btn" data-size="5">5×5</button>
+                <button type="button" class="size-btn" data-size="3" aria-pressed="false">3×3</button>
+                <button type="button" class="size-btn" data-size="4" aria-pressed="false">4×4</button>
+                <button type="button" class="size-btn" data-size="5" aria-pressed="false">5×5</button>
             </div>
 
             <button id="randomBtn" class="action-btn">
@@ -34,12 +34,22 @@
                 Vérifier
             </button>
 
-            <div id="result"></div>
+            <div id="result" role="status" aria-live="polite"></div>
+
+            <section class="found-words" aria-labelledby="foundWordsTitle">
+                <div class="found-words-header">
+                    <h3 id="foundWordsTitle">Mots trouvés</h3>
+                    <span id="foundWordsCount" class="found-words-count">0</span>
+                </div>
+
+                <div id="foundWords" class="found-words-list"></div>
+            </section>
 
             <button id="solveBtn" class="action-btn">
-    Trouver les mots
-</button>
-<div id="solverResult"></div>
+                Trouver les mots
+            </button>
+            
+            <div id="solverResult"></div>
 
         </div>
 
@@ -50,7 +60,7 @@
     </div>
 
     <!-- JS -->
-<script type="module" src="./js/main.js"></script>
+    <script type="module" src="./js/main.js"></script>
 
 </body>
 

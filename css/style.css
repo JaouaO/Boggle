@@ -122,3 +122,76 @@ h2{
     font-size: 14px;
     line-height: 1.4;
 }
+
+#result{
+    min-height: 22px;
+    font-weight: 600;
+}
+
+.found-words{
+    max-width: 280px;
+}
+
+.found-words-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:10px;
+}
+
+.found-words-header h3{
+    font-size:16px;
+    letter-spacing:0.5px;
+}
+
+.found-words-count{
+    min-width:28px;
+    padding:4px 8px;
+    border-radius:999px;
+    text-align:center;
+    font-size:13px;
+    font-weight:700;
+
+    background:#edf0f3;
+
+    box-shadow:
+        inset -3px -3px 6px rgba(255,255,255,0.9),
+        inset 3px 3px 6px rgba(0,0,0,0.08);
+}
+
+.found-words-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    min-height:32px;
+}
+
+.word-pill{
+    display:inline-flex;
+    align-items:center;
+
+    padding:7px 11px;
+    border-radius:999px;
+
+    font-size:14px;
+    line-height:1;
+    white-space:nowrap;
+
+    background:#edf0f3;
+
+    box-shadow:
+        -4px -4px 8px rgba(255,255,255,0.9),
+        4px 4px 8px rgba(0,0,0,0.08);
+
+    transition:transform 0.2s, box-shadow 0.2s;
+}
+
+.word-pill.is-last{
+    font-weight:800;
+    transform:translateY(-2px);
+
+    box-shadow:
+        -5px -5px 10px rgba(255,255,255,0.95),
+        5px 5px 10px rgba(0,0,0,0.11);
+}

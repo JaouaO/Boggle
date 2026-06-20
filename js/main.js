@@ -1,36 +1,50 @@
-import { initGame }
-    from "./game/game.js";
-
-import { initUI }
-    from "./ui/ui.js";
+import { initGame } from "./game/game.js";
+import { initUI, resetFoundWords } from "./ui/ui.js";
 
 let size = 4;
 
-document
-.querySelectorAll(".size-btn")
-.forEach(btn => {
+const sizeButtons = document.querySelectorAll(".size-btn");
 
-    btn.addEventListener(
-        "click",
-        async () => {
+function updateSizeButtons() {
+    sizeButtons.forEach(btn => {
+        const isActive = Number(btn.dataset.size) === size;
 
-            size =
-                Number(btn.dataset.size);
+        btn.classList.toggle("active", isActive);
+        btn.setAttribute("aria-pressed", String(isActive));
+    });
+}
 
-            await initGame(size);
+function clearMessages() {
+    document.getElementById("wordInput").value = "";
+    document.getElementById("result").textContent = "";
+    document.getElementById("solverResult").textContent = "";
+}
+
+sizeButtons.forEach(btn => {
+    btn.addEventListener("click", async () => {
+        const newSize = Number(btn.dataset.size);
+
+        if (newSize === size) {
+            return;
         }
-    );
-});
 
-document
-.getElementById("randomBtn")
-.addEventListener(
-    "click",
-    async () => {
+        size = newSize;
+
+        updateSizeButtons();
+        clearMessages();
+        resetFoundWords();
 
         await initGame(size);
-    }
-);
+    });
+});
+
+document.getElementById("randomBtn").addEventListener("click", async () => {
+    clearMessages();
+    resetFoundWords();
+    await initGame(size);
+});
+
+updateSizeButtons();
 
 await initGame(size);
 
