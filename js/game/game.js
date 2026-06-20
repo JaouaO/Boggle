@@ -43,5 +43,5 @@ export async function initGame(size) {
         "mots"
     );
 
-    setWordSet(words);
+setWordSet(words.map(word => word.norm));
 }

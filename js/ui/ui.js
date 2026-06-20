@@ -1,63 +1,242 @@
 import { state, setWordSet } from "../core/state.js";
 import { getGrid } from "../game/board.js";
 import { solveBoard } from "../engine/solver.js";
-import { normalizeWord, getDisplayWords } from "../engine/dictionary.js";
+import { normalizeWord } from "../engine/dictionary.js";
 
 const foundWords = new Map();
 
 let foundWordsList;
 let foundWordsCount;
+let foundWordsScore;
 
-/**
- * Calcule les mots possibles de la grille actuelle,
- * sans forcément les afficher à l'écran.
- */
+let helpBtn;
+let helpResult;
+let helpIsOpen = false;
+
+let cachedBoardKey = null;
+let cachedWordGroups = [];
+
+function getWordScore(length) {
+    if (length <= 4) return 1;
+    if (length === 5) return 2;
+    if (length === 6) return 3;
+    if (length === 7) return 5;
+
+    return 11;
+}
+
+function getPointsLabel(points) {
+    return `${points} ${points === 1 ? "point" : "points"}`;
+}
+
+function getFoundScore() {
+    return [...foundWords.keys()].reduce((total, norm) => {
+        return total + getWordScore(norm.length);
+    }, 0);
+}
+
+function getPossibleScore(wordGroups) {
+    return wordGroups.reduce((total, group) => {
+        return total + getWordScore(group.norm.length);
+    }, 0);
+}
+
 function getCurrentWordGroups() {
     const grid = getGrid();
 
-    const hasEmptyTile = grid.flat().some(cell => !cell);
+    if (grid.flat().some(cell => !cell)) {
+        cachedBoardKey = null;
+        cachedWordGroups = [];
+        setWordSet([]);
 
-    if (hasEmptyTile) {
         return null;
     }
 
-    const wordGroups = solveBoard(grid);
+    const boardKey =
+        `${grid.length}:${grid.flat().join("|")}`;
 
-    setWordSet(wordGroups.map(group => group.norm));
+    if (boardKey !== cachedBoardKey) {
+        cachedBoardKey = boardKey;
+        cachedWordGroups = solveBoard(grid);
 
-    return wordGroups;
+        setWordSet(
+            cachedWordGroups.map(group => group.norm)
+        );
+    }
+
+    return cachedWordGroups;
 }
 
 function renderFoundWords() {
+    if (!foundWordsList) {
+        return;
+    }
+
     foundWordsList.replaceChildren();
 
     const entries = [...foundWords.entries()];
+    const totalScore = getFoundScore();
 
-    foundWordsCount.textContent = entries.length;
+    foundWordsCount.textContent =
+        `${entries.length} ${entries.length === 1 ? "mot" : "mots"}`;
 
-    entries.forEach(([, variants], index) => {
+    foundWordsScore.textContent = getPointsLabel(totalScore);
+
+    entries.forEach(([norm, variants], index) => {
+        const score = getWordScore(norm.length);
+
         const pill = document.createElement("span");
 
         pill.className =
-            index === entries.length - 1
-                ? "word-pill is-last"
-                : "word-pill";
+            `word-pill word-pill--${score}` +
+            (index === entries.length - 1 ? " is-last" : "");
 
-        pill.textContent = variants.join(" / ");
+        const label = document.createElement("span");
+        label.className = "word-pill__label";
+        label.textContent = variants.join(" / ");
+
+        const scoreBadge = document.createElement("span");
+        scoreBadge.className = "word-pill__score";
+        scoreBadge.textContent = `+${score}`;
+
+        pill.append(label, scoreBadge);
 
         foundWordsList.appendChild(pill);
     });
 }
 
+function clearTileHelp() {
+    document.querySelectorAll(".tile-help").forEach(hint => {
+        hint.hidden = true;
+        hint.textContent = "";
+        hint.classList.remove("is-complete", "is-empty");
+    });
+
+    document.querySelectorAll(".tile").forEach(tile => {
+        tile.removeAttribute("title");
+    });
+}
+
+function renderTileHelp(wordGroups) {
+    const possibleByCell = new Map();
+    const foundByCell = new Map();
+
+    wordGroups.forEach(group => {
+        group.cells.forEach(cellKey => {
+            possibleByCell.set(
+                cellKey,
+                (possibleByCell.get(cellKey) ?? 0) + 1
+            );
+
+            if (foundWords.has(group.norm)) {
+                foundByCell.set(
+                    cellKey,
+                    (foundByCell.get(cellKey) ?? 0) + 1
+                );
+            }
+        });
+    });
+
+    document.querySelectorAll(".tile").forEach(tile => {
+        const cellKey = tile.dataset.cellKey;
+
+        const possible = possibleByCell.get(cellKey) ?? 0;
+        const found = foundByCell.get(cellKey) ?? 0;
+
+        const hint = tile
+            .closest(".tile-cell")
+            .querySelector(".tile-help");
+
+        hint.textContent = `${found}/${possible}`;
+        hint.hidden = false;
+
+        hint.classList.toggle(
+            "is-complete",
+            possible > 0 && found === possible
+        );
+
+        hint.classList.toggle(
+            "is-empty",
+            possible === 0
+        );
+
+        tile.title =
+            `${found} mot(s) trouvé(s) sur ` +
+            `${possible} mot(s) possible(s) utilisant cette case`;
+    });
+}
+
+function createHelpStat(label, value) {
+    const stat = document.createElement("div");
+    stat.className = "help-stat";
+
+    const title = document.createElement("span");
+    title.className = "help-stat__label";
+    title.textContent = label;
+
+    const content = document.createElement("strong");
+    content.className = "help-stat__value";
+    content.textContent = value;
+
+    stat.append(title, content);
+
+    return stat;
+}
+
+function renderHelp(wordGroups) {
+    if (!helpIsOpen || !helpResult) {
+        return;
+    }
+
+    const foundCount = foundWords.size;
+    const possibleCount = wordGroups.length;
+
+    const foundScore = getFoundScore();
+    const possibleScore = getPossibleScore(wordGroups);
+
+    helpResult.replaceChildren();
+
+    helpResult.append(
+        createHelpStat(
+            "Mots",
+            `${foundCount}/${possibleCount}`
+        ),
+        createHelpStat(
+            "Points",
+            `${foundScore}/${possibleScore}`
+        )
+    );
+
+    helpResult.hidden = false;
+
+    renderTileHelp(wordGroups);
+}
+
+function hideHelp() {
+    helpIsOpen = false;
+
+    if (helpBtn) {
+        helpBtn.textContent = "Aide";
+        helpBtn.setAttribute("aria-expanded", "false");
+    }
+
+    if (helpResult) {
+        helpResult.hidden = true;
+        helpResult.replaceChildren();
+    }
+
+    clearTileHelp();
+}
+
 export function resetFoundWords() {
     foundWords.clear();
 
-    if (foundWordsList) {
-        renderFoundWords();
-    }
+    renderFoundWords();
+    hideHelp();
 }
 
 export function initUI() {
+
     const input = document.getElementById("wordInput");
     const checkBtn = document.getElementById("checkBtn");
     const result = document.getElementById("result");
@@ -65,9 +244,12 @@ export function initUI() {
     const solveBtn = document.getElementById("solveBtn");
     const solverResult = document.getElementById("solverResult");
 
-    // Important : pas de "const" ici.
     foundWordsList = document.getElementById("foundWords");
     foundWordsCount = document.getElementById("foundWordsCount");
+    foundWordsScore = document.getElementById("foundWordsScore");
+
+    helpBtn = document.getElementById("helpBtn");
+    helpResult = document.getElementById("helpResult");
 
     renderFoundWords();
 
@@ -86,7 +268,11 @@ export function initUI() {
             return;
         }
 
-        if (!state.wordSet.has(norm)) {
+        const group = wordGroups.find(
+            item => item.norm === norm
+        );
+
+        if (!group || !state.wordSet.has(norm)) {
             result.textContent = "❌ Mot impossible";
             input.select();
             return;
@@ -94,21 +280,21 @@ export function initUI() {
 
         if (foundWords.has(norm)) {
             result.textContent =
-                `↩️ Mot déjà trouvé : ${foundWords.get(norm).join(" / ")}`;
+                `↩️ Mot déjà trouvé : ` +
+                foundWords.get(norm).join(" / ");
 
             input.select();
             return;
         }
 
-        const variants = getDisplayWords(norm)
-            .sort((a, b) => a.localeCompare(b, "fr"));
-
-        foundWords.set(norm, variants);
+        foundWords.set(norm, group.variants);
 
         renderFoundWords();
+        renderHelp(wordGroups);
 
         result.textContent =
-            `✅ Mot ajouté : ${variants.join(" / ")}`;
+            `✅ Mot ajouté : ${group.variants.join(" / ")} ` +
+            `(+${getWordScore(norm.length)})`;
 
         input.value = "";
         input.focus();
@@ -125,6 +311,27 @@ export function initUI() {
         checkWord();
     });
 
+    helpBtn.addEventListener("click", () => {
+        if (helpIsOpen) {
+            hideHelp();
+            return;
+        }
+
+        const wordGroups = getCurrentWordGroups();
+
+        if (!wordGroups) {
+            result.textContent = "Complétez toutes les cases.";
+            return;
+        }
+
+        helpIsOpen = true;
+
+        helpBtn.textContent = "Masquer l’aide";
+        helpBtn.setAttribute("aria-expanded", "true");
+
+        renderHelp(wordGroups);
+    });
+
     solveBtn.addEventListener("click", () => {
         const wordGroups = getCurrentWordGroups();
 
@@ -139,13 +346,31 @@ export function initUI() {
         );
 
         const displayWords = sortedGroups.map(group =>
-            group.variants.length > 1
-                ? group.variants.join(" / ")
-                : group.variants[0]
+            group.variants.join(" / ")
         );
 
         solverResult.innerHTML = sortedGroups.length
             ? `<strong>${sortedGroups.length} mot(s) trouvé(s)</strong><br>${displayWords.join(", ")}`
             : "Aucun mot trouvé.";
+
+        renderHelp(wordGroups);
+    });
+
+    document.getElementById("board").addEventListener("input", event => {
+        if (!event.target.matches(".tile")) {
+            return;
+        }
+
+        cachedBoardKey = null;
+        cachedWordGroups = [];
+
+        foundWords.clear();
+        setWordSet([]);
+
+        renderFoundWords();
+        hideHelp();
+
+        result.textContent = "";
+        solverResult.textContent = "";
     });
 }

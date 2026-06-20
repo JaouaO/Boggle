@@ -39,16 +39,26 @@
             <section class="found-words" aria-labelledby="foundWordsTitle">
                 <div class="found-words-header">
                     <h3 id="foundWordsTitle">Mots trouvés</h3>
-                    <span id="foundWordsCount" class="found-words-count">0</span>
+
+                    <div class="found-words-stats" aria-live="polite">
+                        <span id="foundWordsCount" class="found-words-count">0 mot</span>
+                        <span id="foundWordsScore" class="found-words-score">0 point</span>
+                    </div>
                 </div>
 
                 <div id="foundWords" class="found-words-list"></div>
             </section>
 
+            <button id="helpBtn" type="button" class="action-btn" aria-expanded="false" aria-controls="helpResult">
+                Aide
+            </button>
+
+            <div id="helpResult" class="help-result" role="status" aria-live="polite" hidden></div>
+
             <button id="solveBtn" class="action-btn">
                 Trouver les mots
             </button>
-            
+
             <div id="solverResult"></div>
 
         </div>

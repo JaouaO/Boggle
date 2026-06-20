@@ -54,16 +54,34 @@ export function createBoard(size) {
 
     for (let i = 0; i < size * size; i++) {
 
+        const row = Math.floor(i / size);
+        const col = i % size;
+
+        const cell = document.createElement("div");
+        cell.classList.add("tile-cell");
+
         const input = document.createElement("input");
 
         input.classList.add("tile");
         input.maxLength = 1;
+        input.dataset.cellKey = `${row},${col}`;
+
+        input.setAttribute(
+            "aria-label",
+            `Lettre ligne ${row + 1}, colonne ${col + 1}`
+        );
 
         input.addEventListener("input", () => {
             input.value = input.value.toUpperCase();
         });
 
-        board.appendChild(input);
+        const hint = document.createElement("span");
+        hint.classList.add("tile-help");
+        hint.hidden = true;
+        hint.setAttribute("aria-hidden", "true");
+
+        cell.append(input, hint);
+        board.appendChild(cell);
     }
 }
 
