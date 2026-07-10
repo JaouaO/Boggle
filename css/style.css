@@ -428,3 +428,38 @@ h2{
         font-size:10px;
     }
 }
+
+.board.is-play-mode .tile{
+    cursor:pointer;
+}
+
+.board.is-edit-mode .tile{
+    cursor:text;
+}
+
+.tile.is-selected{
+    transform:scale(1.05);
+
+    box-shadow:
+        inset -5px -5px 10px rgba(255,255,255,0.9),
+        inset 5px 5px 10px rgba(0,0,0,0.12),
+        0 0 0 4px rgba(39,108,199,0.25);
+}
+
+.tile.is-last-selected{
+    outline:3px solid rgba(39,108,199,0.55);
+    outline-offset:3px;
+}
+
+.board.is-play-mode{
+    touch-action:none;
+    user-select:none;
+}
+
+.board.is-play-mode .tile{
+    cursor:pointer;
+}
+
+.tile{
+    user-select:none;
+}

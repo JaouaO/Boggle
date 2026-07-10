@@ -64,7 +64,11 @@ export function createBoard(size) {
 
         input.classList.add("tile");
         input.maxLength = 1;
+        input.readOnly = true;
+
         input.dataset.cellKey = `${row},${col}`;
+        input.dataset.row = row;
+        input.dataset.col = col;
 
         input.setAttribute(
             "aria-label",
