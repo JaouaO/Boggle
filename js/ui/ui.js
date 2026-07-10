@@ -315,6 +315,25 @@ function hideWinScreen() {
     winSolutions.replaceChildren();
 }
 
+function createWordPill(group) {
+    const score = getWordScore(group.norm.length);
+
+    const pill = document.createElement("span");
+    pill.className = `word-pill word-pill--${score}`;
+
+    const label = document.createElement("span");
+    label.className = "word-pill__label";
+    label.textContent = group.variants.join(" / ");
+
+    const scoreBadge = document.createElement("span");
+    scoreBadge.className = "word-pill__score";
+    scoreBadge.textContent = `+${score}`;
+
+    pill.append(label, scoreBadge);
+
+    return pill;
+}
+
 function showWinScreen(wordGroups) {
     if (gameWon) {
         return;
@@ -615,6 +634,9 @@ export function initUI() {
         input.focus();
 
         checkVictory(wordGroups);
+        if (solverResult.children.length > 0) {
+            solveBtn.click();
+        }
 
         return true;
     }
@@ -744,18 +766,34 @@ export function initUI() {
 
         helpUsed = true;
 
-        const sortedGroups = [...wordGroups].sort((a, b) =>
-            a.norm.length - b.norm.length ||
-            a.variants[0].localeCompare(b.variants[0], "fr")
-        );
+        const remainingGroups = wordGroups
+            .filter(group => !foundWords.has(group.norm))
+            .sort((a, b) =>
+                a.norm.length - b.norm.length ||
+                a.variants[0].localeCompare(b.variants[0], "fr")
+            );
 
-        const displayWords = sortedGroups.map(group =>
-            group.variants.join(" / ")
-        );
+        solverResult.replaceChildren();
 
-        solverResult.innerHTML = sortedGroups.length
-            ? `<strong>${sortedGroups.length} mot(s) trouvé(s)</strong><br>${displayWords.join(", ")}`
-            : "Aucun mot trouvé.";
+        const title = document.createElement("div");
+        title.className = "solution-result__title";
+
+        title.textContent = remainingGroups.length
+            ? `${remainingGroups.length} solution${remainingGroups.length > 1 ? "s" : ""} restante${remainingGroups.length > 1 ? "s" : ""}`
+            : "Toutes les solutions ont été trouvées.";
+
+        solverResult.appendChild(title);
+
+        if (remainingGroups.length) {
+            const list = document.createElement("div");
+            list.className = "solution-result__list";
+
+            remainingGroups.forEach(group => {
+                list.appendChild(createWordPill(group));
+            });
+
+            solverResult.appendChild(list);
+        }
 
         renderHelp(wordGroups);
     });

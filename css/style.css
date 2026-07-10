@@ -547,3 +547,20 @@ h2{
     gap:8px;
     margin-bottom:22px;
 }
+
+.solution-result{
+    max-width:280px;
+}
+
+.solution-result__title{
+    margin-bottom:10px;
+    font-size:14px;
+    font-weight:800;
+    color:#152331;
+}
+
+.solution-result__list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+}
