@@ -463,3 +463,87 @@ h2{
 .tile{
     user-select:none;
 }
+
+.game-stats{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.game-stats span{
+    padding:8px 12px;
+    border-radius:999px;
+
+    font-size:14px;
+    font-weight:800;
+
+    background:#edf0f3;
+
+    box-shadow:
+        inset -3px -3px 6px rgba(255,255,255,0.9),
+        inset 3px 3px 6px rgba(0,0,0,0.08);
+}
+
+#timerDisplay{
+    color:#152331;
+}
+
+#wrongAttemptsDisplay{
+    color:#8a3514;
+}
+
+.win-overlay{
+    position:fixed;
+    inset:0;
+    z-index:50;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    padding:24px;
+
+    background:rgba(21,35,49,0.55);
+}
+
+.win-overlay[hidden]{
+    display:none;
+}
+
+.win-modal{
+    width:min(720px, 100%);
+    max-height:90vh;
+    overflow:auto;
+
+    padding:28px;
+    border-radius:30px;
+
+    background:#edf0f3;
+
+    box-shadow:
+        -12px -12px 24px rgba(255,255,255,0.35),
+        12px 12px 24px rgba(0,0,0,0.22);
+}
+
+.win-modal h2{
+    margin-bottom:18px;
+    font-size:32px;
+}
+
+.win-modal h3{
+    margin:22px 0 12px;
+    font-size:18px;
+}
+
+.win-stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+    gap:10px;
+}
+
+.win-solutions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:22px;
+}

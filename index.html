@@ -27,7 +27,11 @@
             <button id="randomBtn" class="action-btn">
                 Lettres aléatoires
             </button>
-            
+
+            <div class="game-stats" aria-live="polite">
+                <span id="timerDisplay">00:00</span>
+                <span id="wrongAttemptsDisplay">0 erreur</span>
+            </div>
 
             <button id="editBoardBtn" type="button" class="action-btn" aria-pressed="false">
                 Saisir les lettres
@@ -74,8 +78,26 @@
 
     </div>
 
+
+    <div id="winOverlay" class="win-overlay" hidden>
+        <div class="win-modal" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+            <h2 id="winTitle">Victoire</h2>
+
+            <div id="winStats" class="win-stats"></div>
+
+            <h3>Solutions</h3>
+            <div id="winSolutions" class="win-solutions"></div>
+
+            <button id="closeWinBtn" type="button" class="action-btn">
+                Fermer
+            </button>
+        </div>
+    </div>
+
     <!-- JS -->
     <script type="module" src="./js/main.js"></script>
+
+
 
 </body>
 
