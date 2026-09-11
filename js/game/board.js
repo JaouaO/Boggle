@@ -21,7 +21,7 @@ const dice5x5 = [
     "AEIOUY", "SPULTE",
     "RECALS", "BMAQJO",
     "DECAMP", "WXYZEA",
-    "ERISP", "TLIBRA",
+    "ERISPN", "TLIBRA",
     "GLENYU"
 ];
 

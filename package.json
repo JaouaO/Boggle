@@ -1,0 +1,24 @@
+{
+  "name": "boggle",
+  "version": "1.0.0",
+  "description": "",
+  "main": "build-dico.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JaouaO/Boggle.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/JaouaO/Boggle/issues"
+  },
+  "homepage": "https://github.com/JaouaO/Boggle#readme",
+  "dependencies": {
+    "csv-parse": "^7.0.2"
+  }
+}
