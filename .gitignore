@@ -13,6 +13,7 @@ audit-after-forced/
 
 dico-version-validee/
 assets/old/
-assets/old/
 assets/dico/dico_sorted.txt
 assets/dico/francais_simple.txt
+# Archives locales
+OLD/

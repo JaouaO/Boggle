@@ -32,6 +32,26 @@ function loadDictionary() {
     return words;
 }
 
+function buildNormalizedIndex(dictionary) {
+    const index = new Map();
+
+    for (const word of dictionary) {
+        const norm = normalizeForGame(word);
+
+        if (!index.has(norm)) {
+            index.set(norm, []);
+        }
+
+        index.get(norm).push(word);
+    }
+
+    for (const variants of index.values()) {
+        variants.sort((a, b) => a.localeCompare(b, "fr"));
+    }
+
+    return index;
+}
+
 function writeFile(filename, lines) {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
     fs.writeFileSync(`${OUTPUT_DIR}/${filename}`, lines.join("\n"), "utf8");
@@ -43,10 +63,10 @@ function uniqueSorted(words) {
 }
 
 /**
- * Ces mots devraient maintenant être absents,
- * car vous les avez ajoutés ou déjà décidés comme bloqués.
+ * Mots décidés comme absents : sigles, abréviations, codes,
+ * noms propres purs, lieux purs, graphies fautives ou formes non françaises.
  */
-const EXPECTED_ABSENT_NOW = [
+const CORE_EXPECTED_ABSENT_NOW = [
     "ssh",
     "age",
     "ages",
@@ -98,19 +118,195 @@ const EXPECTED_ABSENT_NOW = [
     "wifi",
     "sms",
     "gps",
+
+    "php",
+    "npm",
+    "vpn",
+    "ftp",
+    "sql",
+    "tcp",
+    "usb",
 ];
 
 /**
+ * Mots courts ajoutés après audit :
+ * ne pas ajouter ici les vrais mots comme chi, bru, art, aux, clé, cri, que, qui, etc.
+ */
+const SHORT_EXPECTED_ABSENT_NOW = [
+    "abq",
+    "acd",
+    "aev",
+    "aff",
+    "ahz",
+    "alm",
+    "alx",
+    "asv",
+    "avr",
+    "avt",
+    "awh",
+
+    "bry",
+
+    "cci",
+    "cda",
+    "cev",
+    "cgy",
+    "cpa",
+    "cte",
+    "cva",
+
+    "dav",
+    "daw",
+    "dci",
+    "dda",
+    "dev",
+    "dgy",
+    "dpa",
+    "dry",
+    "dva",
+
+    "ebq",
+    "ecd",
+    "eev",
+    "ehz",
+    "elm",
+    "elx",
+    "end",
+    "esr",
+    "esv",
+    "ewb",
+    "ewh",
+
+    "fci",
+    "fda",
+    "fev",
+    "fgy",
+    "fla",
+    "flâ",
+    "fpa",
+    "fra",
+    "fva",
+
+    "gci",
+    "gda",
+    "gev",
+    "ggy",
+    "gpa",
+
+    "hci",
+    "hda",
+    "hev",
+    "hgy",
+    "hpa",
+    "hva",
+
+    "ips",
+
+    "kci",
+    "kda",
+    "kdo",
+    "kev",
+    "kgy",
+    "kpa",
+    "kva",
+
+    "mci",
+    "mda",
+    "mev",
+    "mex",
+    "mgy",
+    "mme",
+    "mpa",
+    "mva",
+
+    "nci",
+    "nda",
+    "nev",
+    "new",
+    "ngy",
+    "npa",
+    "nva",
+
+    "ocs",
+    "oct",
+    "ord",
+    "orf",
+
+    "pci",
+    "pda",
+    "pev",
+    "pgy",
+    "ppa",
+    "pre",
+    "pva",
+
+    "tci",
+    "tda",
+    "tev",
+    "tex",
+    "tgy",
+    "tpa",
+    "tte",
+    "tva",
+
+    "urf",
+    "vox",
+    "wad",
+    "won",
+    "wus",
+
+    "xle",
+    "xve",
+    "xxe",
+
+    "ybq",
+    "ycd",
+    "yev",
+    "yhz",
+    "ylm",
+    "ylx",
+    "ysr",
+    "ysv",
+    "ywb",
+    "ywh",
+
+    "zci",
+    "zda",
+    "zev",
+    "zgy",
+    "zpa",
+    "zva",
+
+    // Graphies fautives ou non retenues
+    "agé",
+    "agée",
+    "agés",
+    "agées",
+];
+
+const EXPECTED_ABSENT_NOW = uniqueSorted([
+    ...CORE_EXPECTED_ABSENT_NOW,
+    ...SHORT_EXPECTED_ABSENT_NOW,
+]);
+
+/**
  * Ces mots doivent rester présents malgré vos blocages.
- * Ça évite de casser les formes françaises correctes.
  */
 const EXPECTED_PRESENT_STILL = [
     "âge",
     "âges",
     "âgé",
     "âgée",
+    "âgés",
+    "âgées",
+
+    "âme",
+    "âmes",
+    "âne",
+    "ânes",
     "île",
     "îles",
+
     "école",
     "écoles",
     "hôtel",
@@ -119,14 +315,12 @@ const EXPECTED_PRESENT_STILL = [
     "forêts",
     "pêche",
     "pêches",
+    "pêcheur",
+    "pêcheurs",
+    "pêcheuse",
+    "pêcheuses",
     "péché",
     "péchés",
-    "cœur",
-    "cœurs",
-    "œuf",
-    "œufs",
-    "bœuf",
-    "bœufs",
 
     "berline",
     "berlines",
@@ -158,7 +352,6 @@ const EXPECTED_PRESENT_STILL = [
     "maison",
     "arbre",
     "cheval",
-    "école",
     "manger",
     "mangé",
     "mangée",
@@ -172,6 +365,70 @@ const EXPECTED_PRESENT_STILL = [
     "prenante",
     "prenants",
     "prenantes",
+
+    // Vrais mots courts à préserver
+    "bru",
+    "chi",
+    "ans",
+    "arc",
+    "ars",
+    "art",
+    "aux",
+    "axe",
+    "axé",
+    "blé",
+    "box",
+    "clé",
+    "coq",
+    "cri",
+    "cru",
+    "crû",
+    "dix",
+    "dru",
+    "est",
+    "exo",
+    "glu",
+    "gré",
+    "ifs",
+    "lux",
+    "max",
+    "mix",
+    "off",
+    "ohm",
+    "phi",
+    "pli",
+    "plu",
+    "pré",
+    "pro",
+    "psi",
+    "psy",
+    "que",
+    "qui",
+    "rho",
+    "rhô",
+    "sax",
+    "six",
+    "ska",
+    "ski",
+    "spa",
+    "thé",
+    "tri",
+    "uns",
+    "wok",
+];
+
+/**
+ * Pour les ligatures, on vérifie la forme normalisée du jeu.
+ * Ainsi œuf / oeuf, bœuf / boeuf, cœur / coeur sont acceptés
+ * si au moins une variante existe dans le dictionnaire.
+ */
+const EXPECTED_PRESENT_NORMALIZED = [
+    ["COEUR", "cœur / coeur"],
+    ["COEURS", "cœurs / coeurs"],
+    ["OEUF", "œuf / oeuf"],
+    ["OEUFS", "œufs / oeufs"],
+    ["BOEUF", "bœuf / boeuf"],
+    ["BOEUFS", "bœufs / boeufs"],
 ];
 
 /**
@@ -281,13 +538,7 @@ const CANDIDATE_GROUPS = {
         "francaise",
         "francaises",
         "garcon",
-        "garcons",
-        "coeur",
-        "coeurs",
-        "oeuf",
-        "oeufs",
-        "boeuf",
-        "boeufs",
+        "garcons"
     ],
 
     "anglais / technique encore possibles": [
@@ -415,7 +666,6 @@ const CANDIDATE_GROUPS = {
         "canadiennes",
         "belge",
         "belges",
-        "suisse",
         "suisses",
         "breton",
         "bretonne",
@@ -425,6 +675,90 @@ const CANDIDATE_GROUPS = {
         "romaine",
         "romains",
         "romaines",
+    ],
+
+    "mots courts valides à préserver": [
+        "bru",
+        "chi",
+        "ans",
+        "arc",
+        "ars",
+        "art",
+        "aux",
+        "axe",
+        "axé",
+        "blé",
+        "box",
+        "clé",
+        "coq",
+        "cri",
+        "cru",
+        "crû",
+        "dix",
+        "dru",
+        "est",
+        "exo",
+        "glu",
+        "gré",
+        "ifs",
+        "lux",
+        "max",
+        "mix",
+        "off",
+        "ohm",
+        "phi",
+        "pli",
+        "plu",
+        "pré",
+        "pro",
+        "psi",
+        "psy",
+        "que",
+        "qui",
+        "rho",
+        "rhô",
+        "sax",
+        "six",
+        "ska",
+        "ski",
+        "spa",
+        "thé",
+        "tri",
+        "uns",
+        "wok",
+    ],
+
+    "mots courts encore à relire": [
+        "bri",
+        "che",
+        "chu",
+        "dux",
+        "erg",
+        "ers",
+        "fox",
+        "gri",
+        "ixe",
+        "ixé",
+        "kha",
+        "khi",
+        "ksi",
+        "lev",
+        "nov",
+        "onc",
+        "ors",
+        "ort",
+        "ost",
+        "oxo",
+        "pla",
+        "pox",
+        "qât",
+        "qin",
+        "sha",
+        "spi",
+        "sri",
+        "tax",
+        "xie",
+        "xis",
     ],
 
     "petits mots de 3 lettres à surveiller": [
@@ -446,6 +780,7 @@ const CANDIDATE_GROUPS = {
         "boy",
         "bye",
         "age",
+        "agé",
         "ile",
         "lys",
         "kif",
@@ -467,6 +802,23 @@ function checkExpected(dictionary, expectedPresent, words) {
                 word,
                 present,
                 expectedPresent,
+            });
+        }
+    }
+
+    return errors;
+}
+
+function checkExpectedNormalized(normalizedIndex) {
+    const errors = [];
+
+    for (const [norm, label] of EXPECTED_PRESENT_NORMALIZED) {
+        if (!normalizedIndex.has(norm)) {
+            errors.push({
+                word: label,
+                norm,
+                present: false,
+                expectedPresent: true,
             });
         }
     }
@@ -514,7 +866,11 @@ function printExpectedErrors(title, errors) {
         const actual = error.present ? "présent" : "absent";
         const expected = error.expectedPresent ? "présent" : "absent";
 
-        console.log(`❌ ${error.word} — ${actual}, attendu ${expected}`);
+        if (error.norm) {
+            console.log(`❌ ${error.word} — aucune variante trouvée pour ${error.norm}`);
+        } else {
+            console.log(`❌ ${error.word} — ${actual}, attendu ${expected}`);
+        }
     }
 }
 
@@ -537,7 +893,7 @@ function printCandidateGroups(results) {
     }
 }
 
-function writeReports(absentErrors, presentErrors, groupResults) {
+function writeReports(absentErrors, presentErrors, normalizedErrors, groupResults, normalizedIndex) {
     const suggestedBlocked = new Set();
 
     const suggestedGroups = [
@@ -564,6 +920,19 @@ function writeReports(absentErrors, presentErrors, groupResults) {
         `Mots attendus présents mais absents : ${presentErrors.length}`,
         ...presentErrors.map(error => `- ${error.word}`),
         "",
+        `Formes normalisées attendues mais absentes : ${normalizedErrors.length}`,
+        ...normalizedErrors.map(error => `- ${error.word} (${error.norm})`),
+        "",
+        "=== FORMES NORMALISÉES CONTRÔLÉES ===",
+        "",
+        ...EXPECTED_PRESENT_NORMALIZED.flatMap(([norm, label]) => [
+            `${label} — ${norm}`,
+            normalizedIndex.has(norm)
+                ? `Variantes trouvées : ${normalizedIndex.get(norm).join(", ")}`
+                : "Variantes trouvées : aucune",
+            "",
+        ]),
+        "",
         "=== GROUPES À RELIRE ===",
         "",
         ...Object.entries(groupResults).flatMap(([groupName, result]) => [
@@ -577,7 +946,17 @@ function writeReports(absentErrors, presentErrors, groupResults) {
     writeFile("suggestion-forced-blocked-a-relire.txt", [
         "À RELIRE AVANT COPIE DANS FORCED_BLOCKED_WORDS",
         "",
+        "Attention : ne pas copier automatiquement toute cette liste.",
+        "Elle contient des candidats à décision.",
+        "",
         ...uniqueSorted([...suggestedBlocked]).map(word => `"${word}",`),
+    ]);
+
+    writeFile("forced-blocked-courts-valides.txt", [
+        "Bloc de mots courts validés comme indésirables.",
+        "À copier dans FORCED_BLOCKED_WORDS si ce n'est pas déjà fait.",
+        "",
+        ...SHORT_EXPECTED_ABSENT_NOW.map(word => `"${word}",`),
     ]);
 
     for (const [groupName, result] of Object.entries(groupResults)) {
@@ -620,6 +999,7 @@ function runArgsMode(dictionary) {
 
 function run() {
     const dictionary = loadDictionary();
+    const normalizedIndex = buildNormalizedIndex(dictionary);
 
     if (runArgsMode(dictionary)) {
         return;
@@ -627,24 +1007,27 @@ function run() {
 
     const absentErrors = checkExpected(dictionary, false, EXPECTED_ABSENT_NOW);
     const presentErrors = checkExpected(dictionary, true, EXPECTED_PRESENT_STILL);
+    const normalizedErrors = checkExpectedNormalized(normalizedIndex);
     const groupResults = scanCandidateGroups(dictionary);
 
     console.log(`Dictionnaire chargé : ${dictionary.size} mots`);
 
     printExpectedErrors("MOTS QUI DEVRAIENT ÊTRE ABSENTS MAINTENANT", absentErrors);
     printExpectedErrors("MOTS QUI DOIVENT RESTER PRÉSENTS", presentErrors);
+    printExpectedErrors("FORMES NORMALISÉES QUI DOIVENT EXISTER", normalizedErrors);
     printCandidateGroups(groupResults);
 
-    writeReports(absentErrors, presentErrors, groupResults);
+    writeReports(absentErrors, presentErrors, normalizedErrors, groupResults, normalizedIndex);
 
     console.log("");
     console.log(`Rapports générés dans : ${OUTPUT_DIR}`);
     console.log("");
     console.log("À ouvrir en priorité :");
     console.log(`- ${OUTPUT_DIR}/rapport.txt`);
+    console.log(`- ${OUTPUT_DIR}/forced-blocked-courts-valides.txt`);
     console.log(`- ${OUTPUT_DIR}/suggestion-forced-blocked-a-relire.txt`);
 
-    if (absentErrors.length || presentErrors.length) {
+    if (absentErrors.length || presentErrors.length || normalizedErrors.length) {
         process.exitCode = 1;
     }
 }

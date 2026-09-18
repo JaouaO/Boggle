@@ -3,6 +3,7 @@ import path from "node:path";
 import { parse } from "csv-parse/sync";
 
 const SOURCE_FILE = "./Morphalou3.1_CSV.csv";
+
 const OUTPUT_DIR = "./assets/dico";
 
 const OUTPUTS = [
@@ -13,89 +14,45 @@ const OUTPUTS = [
 
 const DEBUG = true;
 
-const FORCED_ALLOWED_WORDS = new Set([
-    "laser", "lasers",
-    "radar", "radars",
-    "sonar", "sonars",
-    "ovni", "ovnis",
-    "sida",
+const EDITORIAL_BLOCKED_WORDS = new Set([
+    // Sigles / formats / termes techniques qui passent parfois sans catégorie fiable.
+    "api", "css", "csv", "dns", "gif", "html", "http", "https",
+    "jpeg", "jpg", "json", "pdf", "png", "rss", "seo", "sftp",
+    "ssl", "svg", "tls", "tsv", "uri", "url", "xml",
 
-    "poubelle", "poubelles",
-    "silhouette", "silhouettes",
-    "guillotine", "guillotines",
-    "diesel", "diesels",
-    "chauvin", "chauvine", "chauvins", "chauvines",
-    "mécène", "mécènes",
-    "sadique", "sadiques",
-    "masochiste", "masochistes",
 
-    "sandwich", "sandwiches",
-    "parking", "parkings",
-]);
+    // Graphies non accentuées écartées pour privilégier l’affichage français propre.
+    // Elles restent jouables grâce aux formes accentuées : âge/âges, île/îles.
+    "age", "ages", "agé", "agée", "agés", "agées", "ile", "iles",
+    // Noms propres / lieux purs.
+    "angleterre", "berlin", "japon", "nice",
 
-const FORCED_BLOCKED_WORDS = new Set([
-    "berlin",
-    "nice",
+    // Résidus courts ou sigles restants après le filtre Dicollecte.
+    "ada", "ava", "tva", "uva",
+     "bay", "boy", "oxo", "pox",
 
-    "ssh",
-"age",
-"ages",
-"angleterre",
-"belgique",
-"berlin",
-"brésil",
-"canada",
-"drive",
-"ile",
-"iles",
-"inde",
-"japon",
-"lille",
-"orléans",
+    "bay",
+"big",
+"bye",
+"drivé",
 "speed",
-"suisse",
-"mysql",
-"sql",
-"tsv",
-"xml",
-"json",
-"csv",
-"tsv",
-"rss",
-"seo",
-"sftp",
-"ssl",
-"tls",
-"dns",
+"kdo",
+"cte",
+"xle",
+"xve",
+"xxe",
 
-    "download",
-    "downloads",
-
-    "upload",
-    "uploads",
-    "awb", "atm", "asc", "asr",
-    "api", "url", "uri", "css", "html", "http", "https",
-    "ftp", "pdf", "png", "jpg", "jpeg", "gif", "svg",
-    "sql", "tcp", "usb", "dvd", "mp3", "mp4", "sms",
-    "gps", "wifi",
-
-    "big", "bay", "boy", "bye", "cash", "cool", "mail",
-    "net", "web", "top", "club",
-
-    "nantes", "france", "europe", "macron", "napoléon",
-    "jaoua", "frédéric", "maëli", "loire", "garonne",
-    "méditerranée",
-]);
-
-const BAD_SHORT_WORDS = new Set([
-    "abc", "acm", "adn", "adsl", "afp", "api", "arn", "asr", "atm", "awb",
-    "bay", "bbc", "bcbg", "bd", "big", "bit", "biz", "bmx", "boy", "bug",
-    "bye", "cash", "cd", "cgi", "cia", "clip", "club", "cool", "cpu", "crc",
-    "csv", "dvd", "fax", "ftp", "gif", "gpl", "gsm", "html", "http", "https",
-    "ip", "irc", "jpeg", "jpg", "ko", "mail", "mp3", "mp4", "net", "nasa",
-    "pc", "pdf", "png", "pop", "pub", "ram", "rap", "rock", "rss", "sms",
-    "sos", "sql", "tcp", "tee", "top", "url", "usb", "vip", "web", "wifi",
-    "www", "zip"
+"dak",
+"eye",
+"gyr",
+"mex",
+"pox",
+"tax",
+"wus",
+"yio",
+"zio",
+"zon",
+"sri",
 ]);
 
 const SAMPLES_TO_CHECK = [
@@ -121,6 +78,9 @@ const SAMPLES_TO_CHECK = [
     "abattre", "abattu", "abattue",
     "abattais", "abattait", "abatrais",
     "finis", "finissons",
+
+    "apa", "aci", "abq", "dei", "iie", "cgy", "yci", "zgy",
+    "api", "html", "download", "age", "ile", "ada", "ava", "lev", "tva", "uva",
 ];
 
 function normalizeHeader(value) {
@@ -158,20 +118,6 @@ function normalizeText(value) {
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
-}
-
-function isVowellessShortWord(word) {
-    if (word.length !== 3) {
-        return false;
-    }
-
-    const normalized = word
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replaceAll("œ", "oe")
-        .replaceAll("æ", "ae");
-
-    return !/[aeiouy]/.test(normalized);
 }
 
 function cleanMorphValue(value) {
@@ -243,6 +189,20 @@ function isAllUppercaseRawWord(rawWord) {
     );
 }
 
+function isVowellessShortWord(word) {
+    if (word.length !== 3) {
+        return false;
+    }
+
+    const normalized = word
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replaceAll("œ", "oe")
+        .replaceAll("æ", "ae");
+
+    return !/[aeiouy]/.test(normalized);
+}
+
 function getAllFilledValues(row, columns) {
     return columns
         .map(column => row[column])
@@ -287,28 +247,39 @@ function buildColumnContext(headers) {
             "category",
             "catgram",
             "part_of_speech",
-            "pos"
+            "pos",
         ]),
 
         subcategoryColumns: getColumnsContaining(headers, [
             "sous_categorie",
             "subcategory",
-            "sub_category"
+            "sub_category",
+        ]),
+
+        originColumns: getColumnsContaining(headers, [
+            "origine",
+            "origines",
+            "etymologie",
+            "etymology",
+        ]),
+
+        locutionColumns: getColumnsContaining(headers, [
+            "locution",
         ]),
 
         modeColumns: getColumnsByHeaderToken(headers, [
             "mode",
-            "mood"
+            "mood",
         ]),
 
         tenseColumns: getColumnsByHeaderToken(headers, [
             "temps",
-            "tense"
+            "tense",
         ]),
 
         personColumns: getColumnsByHeaderToken(headers, [
             "personne",
-            "person"
+            "person",
         ]),
     };
 }
@@ -329,10 +300,7 @@ function getCandidateWords(row, wordColumns) {
             continue;
         }
 
-        words.push({
-            raw,
-            word,
-        });
+        words.push({ raw, word });
     }
 
     const seen = new Set();
@@ -351,7 +319,12 @@ function getCategoryText(row, columns) {
     return normalizeText([
         getAllFilledValues(row, columns.categoryColumns),
         getAllFilledValues(row, columns.subcategoryColumns),
-    ].join(" "));
+        getAllFilledValues(row, columns.locutionColumns),
+    ].join(" ")).trim();
+}
+
+function getOriginText(row, columns) {
+    return normalizeText(getAllFilledValues(row, columns.originColumns)).trim();
 }
 
 function isProperNoun(row, columns) {
@@ -484,22 +457,12 @@ function shouldKeepVerb(row, columns, word) {
     return false;
 }
 
-function isBadForGame(row, columns, rawWord, word) {
+function isBadForGame(row, columns, rawWord) {
     const categoryText = getCategoryText(row, columns);
-
-    if (FORCED_ALLOWED_WORDS.has(word)) {
-        return false;
-    }
-
-    if (FORCED_BLOCKED_WORDS.has(word)) {
-        return true;
-    }
+    const originText = getOriginText(row, columns);
+    const combinedText = `${categoryText} ${originText}`;
 
     if (isAllUppercaseRawWord(rawWord)) {
-        return true;
-    }
-
-    if (BAD_SHORT_WORDS.has(word)) {
         return true;
     }
 
@@ -514,11 +477,63 @@ function isBadForGame(row, columns, rawWord, word) {
         categoryText.includes("nom de marque") ||
         categoryText.includes("marque deposee") ||
         categoryText.includes("trademark") ||
-        categoryText.includes("etranger") ||
-        categoryText.includes("foreign") ||
-        categoryText.includes("anglais") ||
-        categoryText.includes("english")
+        categoryText.includes("prefixe") ||
+        categoryText.includes("suffixe") ||
+        combinedText.includes("mot etranger") ||
+        combinedText.includes("forme etrangere") ||
+        combinedText.includes("foreign") ||
+        combinedText.includes("anglais") ||
+        combinedText.includes("english") ||
+        combinedText.includes("anglicisme")
     );
+}
+
+
+function isEditorialBlockedWord(word) {
+    return EDITORIAL_BLOCKED_WORDS.has(word);
+}
+
+function normalizeShortCodeShape(word) {
+    return cleanWord(word)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replaceAll("œ", "oe")
+        .replaceAll("æ", "ae")
+        .toLowerCase();
+}
+
+function isGeneratedDicollecteShortCode(row, columns, word) {
+    if (word.length !== 3) {
+        return false;
+    }
+
+    const normalized = normalizeShortCodeShape(word);
+
+    const looksGeneratedCode =
+        /^[a-zµ](?:bq|cd|ci|da|ev|gy|hz|lm|lx|pa|sr|sv|va|wb|wh)$/.test(normalized);
+
+    if (!looksGeneratedCode) {
+        return false;
+    }
+
+    const categoryText = getCategoryText(row, columns);
+    const originText = getOriginText(row, columns);
+
+    return (
+        !categoryText ||
+        originText.includes("dicollecte")
+    );
+}
+
+function isRomanNumeralLikeArtifact(word) {
+    const normalized = normalizeShortCodeShape(word);
+
+    return [
+        "dei",
+        "ide",
+        "iie",
+        "iide",
+    ].includes(normalized);
 }
 
 function shouldKeepWord(row, columns, candidate) {
@@ -532,23 +547,27 @@ function shouldKeepWord(row, columns, candidate) {
         return false;
     }
 
-    if (FORCED_ALLOWED_WORDS.has(word)) {
-        return true;
-    }
-
-    if (FORCED_BLOCKED_WORDS.has(word)) {
+    if (isEditorialBlockedWord(word)) {
         return false;
     }
 
     if (isVowellessShortWord(word)) {
-    return false;
+        return false;
+    }
+
+    if (isGeneratedDicollecteShortCode(row, columns, word)) {
+        return false;
+    }
+
+    if (isRomanNumeralLikeArtifact(word)) {
+        return false;
     }
 
     if (isProperNoun(row, columns)) {
         return false;
     }
 
-    if (isBadForGame(row, columns, raw, word)) {
+    if (isBadForGame(row, columns, raw)) {
         return false;
     }
 
@@ -601,6 +620,8 @@ function buildBaseWordList() {
         console.log("Colonnes de mots :", columns.wordColumns.join(" | "));
         console.log("Colonnes catégories :", columns.categoryColumns.join(" | "));
         console.log("Colonnes sous-catégories :", columns.subcategoryColumns.join(" | "));
+        console.log("Colonnes origines :", columns.originColumns.join(" | "));
+        console.log("Colonnes locution :", columns.locutionColumns.join(" | "));
         console.log("Colonnes mode :", columns.modeColumns.join(" | "));
         console.log("Colonnes temps :", columns.tenseColumns.join(" | "));
         console.log("Colonnes personne :", columns.personColumns.join(" | "));
